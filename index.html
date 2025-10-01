@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Circularidade – Protótipo Didático</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --bad:#ef4444;
+      --border:#1f2937; --good:#10b981; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(135deg,#0b1225,#0f172a 35%,#0b1225);color:var(--text)}
+    header{padding:24px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(15,23,42,.85);backdrop-filter:blur(8px)}
+    h1{margin:0;font-size:clamp(18px,3vw,26px);letter-spacing:0.2px}
+    .wrap{max-width:1100px;margin:0 auto;padding:22px 20px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;overflow:hidden}
+    .col-8{grid-column:span 8}
+    .col-4{grid-column:span 4}
+    label{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:14px 0 6px;flex-wrap:wrap;word-break:break-word}
+    input[type="range"]{width:100%;max-width:100%}
+    input[type="number"],input[type="text"],select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:var(--text);max-width:100%}
+    .row{display:grid;grid-template-columns:repeat(2, minmax(220px,1fr));gap:12px}
+    .muted{color:var(--muted);font-size:12px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid var(--border);font-size:12px}
+    .section-title{font-weight:700;margin:6px 0 10px}
+    .kpi{display:flex;align-items:center;gap:12px;margin:10px 0}
+    .bar{flex:1;height:14px;border-radius:999px;background:#0b1220;border:1px solid var(--border);overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,var(--bad),var(--warn),var(--good));width:0%}
+    .score{font-size:38px;font-weight:800}
+    button{background:var(--accent);border:none;color:#04210f;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+    .btn-sec{background:#0b1220;border:1px solid var(--border);color:var(--text)}
+    .row-3{display:grid;grid-template-columns:repeat(3, minmax(220px,1fr));gap:12px}
+    .row-2{display:grid;grid-template-columns:repeat(2, minmax(220px,1fr));gap:12px}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;border:1px solid var(--border);background:#0b1220;font-size:12px}
+    .note{font-size:12px;color:var(--muted);line-height:1.5}
+    .foot{margin-top:12px;border-top:1px dashed var(--border);padding-top:12px}
+    details{border:1px dashed var(--border);border-radius:12px;padding:10px}
+    summary{cursor:pointer}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    /* prevent grid items from overflowing */
+    .row > div, .row-2 > div, .row-3 > div{min-width:0}
+    /* Layout responsivo suave: mantém "barrinhas" em 2-3 colunas quando couber; empilha só quando a tela for muito estreita */
+    @media (max-width: 980px){
+      .col-8,.col-4{grid-column:span 12}
+      .row-3{grid-template-columns:repeat(2, minmax(220px,1fr))}
+    }
+    @media (max-width: 520px){
+      .row{grid-template-columns:1fr}
+      .row-2{grid-template-columns:1fr}
+      .row-3{grid-template-columns:1fr}
+      .wrap{padding:16px 14px}
+      header{padding:18px 14px}
+      .score{font-size:32px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Calculadora de Circularidade • Protótipo acadêmico</h1>
+      <div class="muted">Fundamentada em princípios da Ellen MacArthur Foundation (design out waste, ciclos técnico/biológico, serviços) e inspirada no <em>Material Circularity Indicator</em> (MCI). Uso didático.</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <section class="card col-8">
+        <div class="section-title">Dados do produto/sistema</div>
+        <div class="row">
+          <div>
+            <label>Nome do produto/sistema <span class="pill">opcional</span></label>
+            <input id="name" type="text" placeholder="Ex.: Camiseta algodão, Smartphone, Embalagem retornável" />
+          </div>
+          <div>
+            <label>Massa total (kg) <span class="pill">aprox.</span></label>
+            <input id="mass" type="number" min="0" step="0.01" value="1"/>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px">Materiais</div>
+        <div class="row-3">
+          <div>
+            <label>Conteúdo reciclado (%) <span id="recycled_val" class="pill">20%</span></label>
+            <input id="recycled" type="range" min="0" max="100" value="20" oninput="sync('recycled')"/>
+            <div class="muted">Frações de origem pós-consumo/pós-industrial.</div>
+          </div>
+          <div>
+            <label>Conteúdo renovável (%) <span id="renewable_val" class="pill">10%</span></label>
+            <input id="renewable" type="range" min="0" max="100" value="10" oninput="sync('renewable')"/>
+            <div class="muted">Biomassa certificada/biodegradável.</div>
+          </div>
+          <div>
+            <label>Materiais tóxicos restritos? <span class="pill">penaliza</span></label>
+            <select id="toxicity">
+              <option value="0">Não</option>
+              <option value="1">Sim</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px">Design e Uso</div>
+        <div class="row-3">
+          <div>
+            <label>Durabilidade (anos) <span id="durability_val" class="pill">3</span></label>
+            <input id="durability" type="range" min="0" max="15" value="3" oninput="sync('durability')"/>
+            <div class="muted">Vida útil esperada em uso normal.</div>
+          </div>
+          <div>
+            <label>Reuso/remanufatura (nº de ciclos) <span id="reuse_val" class="pill">1</span></label>
+            <input id="reuse" type="range" min="0" max="5" value="1" oninput="sync('reuse')"/>
+            <div class="muted">Quantas vezes o produto retorna ao uso.</div>
+          </div>
+          <div>
+            <label>Reparabilidade/modularidade (%) <span id="repair_val" class="pill">50%</span></label>
+            <input id="repairability" type="range" min="0" max="100" value="50" oninput="sync('repairability')"/>
+            <div class="muted">Facilidade de conserto, padronização, design para desmontagem.</div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px">Fim de Vida</div>
+        <div class="row-3">
+          <div>
+            <label>Taxa de recuperação/reciclagem (%) <span id="eol_val" class="pill">40%</span></label>
+            <input id="eol" type="range" min="0" max="100" value="40" oninput="sync('eol')"/>
+            <div class="muted">% que retorna como insumo (reciclagem, compostagem).</div>
+          </div>
+          <div>
+            <label>Energia renovável no ciclo (%) <span id="ren_energy_val" class="pill">20%</span></label>
+            <input id="ren_energy" type="range" min="0" max="100" value="20" oninput="sync('ren_energy')"/>
+            <div class="muted">Participação de energia renovável no ciclo de vida.</div>
+          </div>
+          <div>
+            <label>Modelo de negócio</label>
+            <select id="model">
+              <option value="sale">Venda tradicional</option>
+              <option value="service">Produto-como-serviço / leasing</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="foot">
+          <div class="flex">
+            <button onclick="calc()">Calcular índice</button>
+            <button class="btn-sec" onclick="resetForm()">Limpar</button>
+            <span class="note">*Protótipo educacional: não substitui ACV completa ou MCI oficial.</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card col-4">
+        <div class="section-title">Resultado</div>
+        <div class="kpi">
+          <div class="score" id="score">0</div>
+          <div>%</div>
+        </div>
+        <div class="bar"><div id="bar" class="fill"></div></div>
+        <div class="muted" id="qualifier" style="margin-top:8px">Aguardando cálculo…</div>
+
+        <div class="section-title" style="margin-top:16px">Pesos (avançado)</div>
+        <div class="row-2">
+          <div>
+            <label>Peso Materiais <span id="w_mat_v" class="pill">0.30</span></label>
+            <input id="w_mat" type="range" min="0" max="0.6" step="0.01" value="0.30" oninput="sync('w_mat')"/>
+          </div>
+          <div>
+            <label>Peso Design/Uso <span id="w_use_v" class="pill">0.40</span></label>
+            <input id="w_use" type="range" min="0" max="0.6" step="0.01" value="0.40" oninput="sync('w_use')"/>
+          </div>
+        </div>
+        <div class="row-2">
+          <div>
+            <label>Peso Fim de Vida <span id="w_eol_v" class="pill">0.30</span></label>
+            <input id="w_eol" type="range" min="0" max="0.6" step="0.01" value="0.30" oninput="sync('w_eol')"/>
+          </div>
+          <div>
+            <label>Penalidade Toxicidade <span id="pen_tox_v" class="pill">10</span></label>
+            <input id="pen_tox" type="range" min="0" max="30" step="1" value="10" oninput="sync('pen_tox')"/>
+          </div>
+        </div>
+
+        <details style="margin-top:16px">
+          <summary><strong>Metodologia (resumo)</strong></summary>
+          <p class="note">
+            Índice de 0 a 100. Componentes normalizados (0–1) e ponderados, inspirados em princípios da EMF (design out waste, ciclos técnico/biológico,
+            energia renovável, serviço) e na lógica do Material Circularity Indicator (MCI). Fórmula:
+          </p>
+          <p class="note">
+            IC = 100 × [ W<sub>mat</sub>·M + W<sub>uso</sub>·U + W<sub>eol</sub>·E ] − Penalidades.
+          </p>
+          <p class="note">
+            Onde:<br/>
+            M = 0.6·(%reciclado/100) + 0.4·(%renovável/100).<br/>
+            U = 0.5·f(durabilidade) + 0.3·f(reuso) + 0.2·(reparabilidade/100) + bônus (+0.03) se modelo = serviço.<br/>
+            E = 0.8·(%recuperação/100) + 0.2·(%energia renovável/100).<br/>
+            Penalidades: toxicidade × (pen_tox/100). Fatores f() fazem compressão log/raiz para evitar supervalorização de extremos.
+          </p>
+          <p class="note">
+            Este protótipo é para fins educacionais e não substitui ACV (ISO 14040/44) nem o cálculo oficial do MCI.
+          </p>
+        </details>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    function sync(id){
+      const el = document.getElementById(id);
+      const val = document.getElementById(id + '_val');
+      if(val){ val.textContent = el.value + (id==='durability'?'': (id==='reuse'?'': (id.startsWith('w_')?'': (id==='pen_tox'?'':'')))) + (id.includes('ren')||id==='repairability'||id==='recycled'||id==='renewable'||id==='eol'?'%':''); }
+      if(id==='w_mat'||id==='w_use'||id==='w_eol'||id==='pen_tox'){
+        document.getElementById(id+'_v').textContent = el.value;
+      }
+      if(id==='durability'){ document.getElementById('durability_val').textContent = el.value; }
+      if(id==='reuse'){ document.getElementById('reuse_val').textContent = el.value; }
+      if(id==='repairability'){ document.getElementById('repair_val').textContent = el.value + '%'; }
+      if(id==='eol'){ document.getElementById('eol_val').textContent = el.value + '%'; }
+      if(id==='ren_energy'){ document.getElementById('ren_energy_val').textContent = el.value + '%'; }
+      if(id==='recycled'){ document.getElementById('recycled_val').textContent = el.value + '%'; }
+      if(id==='renewable'){ document.getElementById('renewable_val').textContent = el.value + '%'; }
+    }
+
+    function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+    // compressões para evitar explosão de pontuação
+    function normDurability(years){
+      // 0 a 15 anos -> 0..1 (raiz para ganhos decrescentes)
+      return clamp01(Math.sqrt(Math.max(0, years))/Math.sqrt(15));
+    }
+    function normReuse(cycles){
+      // 0 a 5 ciclos -> 0..1 (log1p para retornos decrescentes)
+      return clamp01(Math.log1p(Math.max(0, cycles))/Math.log1p(5));
+    }
+
+    function calc(){
+      const recycled = parseFloat(document.getElementById('recycled').value)/100;
+      const renewable = parseFloat(document.getElementById('renewable').value)/100;
+      const tox = parseInt(document.getElementById('toxicity').value,10);
+      const durability = parseFloat(document.getElementById('durability').value);
+      const reuse = parseFloat(document.getElementById('reuse').value);
+      const repair = parseFloat(document.getElementById('repairability').value)/100;
+      const eol = parseFloat(document.getElementById('eol').value)/100;
+      const renE = parseFloat(document.getElementById('ren_energy').value)/100;
+      const model = document.getElementById('model').value;
+
+      // Pesos
+      const w_mat = parseFloat(document.getElementById('w_mat').value);
+      const w_use = parseFloat(document.getElementById('w_use').value);
+      const w_eol = parseFloat(document.getElementById('w_eol').value);
+      const pen_tox = parseFloat(document.getElementById('pen_tox').value); // pontos percentuais
+
+      // normalizações
+      const M = clamp01(0.6*recycled + 0.4*renewable);
+      let U = clamp01(0.5*normDurability(durability) + 0.3*normReuse(reuse) + 0.2*repair);
+      if(model === 'service'){ U = clamp01(U + 0.03); } // pequeno bônus por facilitar take-back
+      const E = clamp01(0.8*eol + 0.2*renE);
+
+      // normaliza pesos para somarem 1 (caso usuário altere)
+      const wsum = w_mat + w_use + w_eol;
+      const Wm = w_mat/wsum, Wu = w_use/wsum, We = w_eol/wsum;
+
+      let IC = 100 * (Wm*M + Wu*U + We*E);
+      if(tox === 1){ IC = Math.max(0, IC - pen_tox); }
+
+      // saída
+      const score = document.getElementById('score');
+      const bar = document.getElementById('bar');
+      const qual = document.getElementById('qualifier');
+      const s = Math.round(IC);
+      score.textContent = s;
+      bar.style.width = s + "%";
+      qual.textContent = (s>=80? "Excelente circularidade potencial (verificar trade-offs e ACV).":
+                         s>=60? "Boa circularidade potencial — melhorias possíveis via design e EPR.":
+                         s>=40? "Circularidade moderada — revisar materiais, reuso e fim de vida.":
+                                "Baixa circularidade — predominância de fluxo linear.");
+    }
+
+    function resetForm(){
+      const defaults = {
+        recycled:20, renewable:10, toxicity:0, durability:3, reuse:1, repairability:50,
+        eol:40, ren_energy:20, model:'sale', w_mat:0.30, w_use:0.40, w_eol:0.30, pen_tox:10
+      };
+      for(const k in defaults){
+        const el = document.getElementById(k);
+        el.value = defaults[k];
+        if(el.type === 'range' || el.tagName==='SELECT'){ sync(k); }
+      }
+      document.getElementById('score').textContent = "0";
+      document.getElementById('bar').style.width = "0%";
+      document.getElementById('qualifier').textContent = "Aguardando cálculo…";
+      document.getElementById('name').value = "";
+      document.getElementById('mass').value = 1;
+      // update pills
+      sync('recycled'); sync('renewable'); sync('durability'); sync('reuse'); sync('repairability');
+      sync('eol'); sync('ren_energy'); sync('w_mat'); sync('w_use'); sync('w_eol'); sync('pen_tox');
+    }
+
+    // init
+    window.addEventListener('DOMContentLoaded', ()=>{
+      ['recycled','renewable','durability','reuse','repairability','eol','ren_energy','w_mat','w_use','w_eol','pen_tox'].forEach(sync);
+      calc();
+    });
+  </script>
+</body>
+</html>
